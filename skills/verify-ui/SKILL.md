@@ -26,28 +26,51 @@ This is not optional. This is how you build UI.
 
 ### Using Playwright CLI (Primary Method)
 
-```bash
-# 1. Open the page
-playwright-cli open https://app.project.test/profile --headed
+Requires: `npm install -g @playwright/cli@latest && playwright-cli install-browser`
 
-# 2. Take a snapshot (shows page structure and element references)
+```bash
+# 1. Open the page in a headed browser
+playwright-cli open https://your-app.test/dashboard
+
+# 2. Take a snapshot (returns page structure with element refs for interaction)
 playwright-cli snapshot
 
-# 3. Take a screenshot (saves to disk — you can analyze the visual result)
+# 3. Take a screenshot (saves visual capture to disk)
 playwright-cli screenshot
 
-# 4. Interact (if testing a flow)
-playwright-cli click e15          # Click a button
-playwright-cli fill e21 "test"    # Fill an input
-playwright-cli press Enter        # Submit
-playwright-cli screenshot         # Capture the result
+# 4. Interact with the page (use refs from snapshot)
+playwright-cli click ref15          # Click a button by ref
+playwright-cli fill ref21 "test"    # Fill an input by ref
+playwright-cli select ref8 "option" # Select a dropdown option
+playwright-cli press Enter          # Press a key
+playwright-cli screenshot           # Capture the result
 
 # 5. Check different states
 # Navigate to empty state
 # Try submitting without required fields
 # Check with long text content
 # Check loading states
+
+# 6. Check for JS errors
+playwright-cli console
 ```
+
+**Key commands reference:**
+
+| Command | What it does |
+|---------|-------------|
+| `open [url]` | Open browser, optionally navigate to URL |
+| `goto <url>` | Navigate to a URL |
+| `snapshot` | Capture page structure with element refs |
+| `screenshot [ref]` | Screenshot the page or a specific element |
+| `click <ref>` | Click an element |
+| `fill <ref> <text>` | Fill text into an input |
+| `select <ref> <val>` | Select a dropdown option |
+| `type <text>` | Type text into the focused element |
+| `press <key>` | Press a keyboard key |
+| `console` | Show console messages (check for JS errors) |
+| `state-save [file]` | Save auth state for reuse |
+| `state-load <file>` | Load saved auth state |
 
 ### Using Pest 4 Browser Visit (Alternative)
 
@@ -56,8 +79,8 @@ When you need Laravel auth context:
 ```php
 // Quick verification script (not a permanent test)
 $this->actingAs($user);
-$page = visit('/agent/profile');
-$page->screenshot('verify-profile');
+$page = visit('/dashboard');
+$page->screenshot('verify-dashboard');
 ```
 
 ### Using Boost Browser Logs
@@ -135,7 +158,15 @@ Almost never. But these are acceptable exceptions:
 ## Authentication During Verification
 
 ### With Playwright CLI
-The first time you need to access an authenticated page:
+Two options for authenticated pages:
+
+**Option A: Manual login (interactive)**
+1. `playwright-cli open https://your-app.test/login`
+2. Log in manually in the browser
+3. `playwright-cli state-save auth.json` — save the session
+4. Future sessions: `playwright-cli state-load auth.json`
+
+**Option B: Ask the user to log in**
 1. Navigate to the login page
 2. Ask the user to log in manually (Playwright shows a real browser)
 3. Session persists for the rest of the Playwright session
@@ -144,7 +175,7 @@ The first time you need to access an authenticated page:
 Use `actingAs()` — no login dance needed:
 ```php
 $this->actingAs(User::factory()->create());
-$page = visit('/agent/dashboard');
+$page = visit('/dashboard');
 ```
 
 ## The Minimum Standard

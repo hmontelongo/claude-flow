@@ -17,7 +17,93 @@ We don't build "CRUD pages." We build **workflows that help users accomplish goa
 
 4. **Hierarchy is king.** On every screen, one thing is most important. Design around that. Size, position, and visual weight communicate what matters.
 
-5. **Consistency is a feature.** Same type of data → same pattern everywhere. If properties are shown as cards in search, they're cards in collections, they're cards in favorites.
+5. **Consistency is a feature.** Same type of data → same pattern everywhere. If items are shown as cards in search, they're cards in lists, they're cards in favorites.
+
+## Component Organization
+
+### When to Create Components
+
+| Signal | Action |
+|--------|--------|
+| Same Flux composition used 2+ times | Extract to `components/` |
+| A visual pattern with variations (status badges, price displays) | Extract with props |
+| A form field group with label + input + help text | Extract as field component |
+| Any card-like grouping of data | Extract as a card component |
+
+### Naming Convention
+
+```
+resources/views/components/
+├── ui/                          # Generic, reusable across projects
+│   ├── stat-card.blade.php      # KPI/metric display
+│   ├── status-badge.blade.php   # Status indicators
+│   ├── empty-state.blade.php    # Empty state with icon + CTA
+│   ├── price-display.blade.php  # Formatted currency
+│   └── info-row.blade.php       # Label: Value pair
+├── [domain]/                    # Domain-specific (e.g., product/, order/, listing/)
+│   ├── card.blade.php           # Summary card for the domain entity
+│   ├── detail-section.blade.php # Collapsible detail group
+│   └── image-gallery.blade.php  # Image grid/carousel
+└── layout/                      # Page-level patterns
+    ├── page-header.blade.php    # Title + actions + breadcrumbs
+    ├── filter-bar.blade.php     # Search + filter controls
+    └── section-group.blade.php  # Grouped content with heading
+```
+
+### Tailwind Usage Reference
+
+**Appropriate on/around Flux components:**
+- Layout: `flex`, `grid`, `gap-*`, `items-center`, `justify-between`
+- Spacing: `space-y-*`, `gap-*`, `p-*`, `m-*`
+- Responsive: `sm:`, `md:`, `lg:` breakpoints
+- Display: `hidden`, `sm:block`
+- Sizing: `max-w-*`, `w-full`
+
+**Never on Flux components** (use their props instead):
+- Colors → `color`, `variant` props
+- Sizing → `size` prop
+- Typography → handled internally
+- Border radius → handled internally
+- Hover/focus states → handled internally
+
+### Where Logic Belongs
+
+| Type of Logic | Where It Goes |
+|---------------|---------------|
+| Data queries, aggregations | Livewire component (computed properties) |
+| Format/display helpers | Blade component props, model accessors, or helpers |
+| Business rules | Actions, Services, or Model methods |
+| Conditional display | Simple `@if` in Blade (but NOT complex conditions) |
+| Loops | `@foreach` in Blade (but data prep is in the component) |
+
+### Volt Single-File Components
+
+For simple pages with straightforward logic:
+
+```blade
+{{-- resources/views/livewire/dashboard.blade.php --}}
+<?php
+
+use Livewire\Volt\Component;
+use Livewire\Attributes\Computed;
+
+new class extends Component {
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'items' => auth()->user()->items()->count(),
+            'orders' => auth()->user()->orders()->count(),
+            'contacts' => auth()->user()->contacts()->count(),
+        ];
+    }
+}; ?>
+
+<div>
+    <x-page-header title="Dashboard" />
+    {{-- Clean, declarative view --}}
+</div>
+```
 
 ## Pattern Library
 
@@ -28,20 +114,20 @@ Instead of rows with columns, use **single-column card layouts** that aggregate 
 ```blade
 {{-- ❌ AVOID: Traditional table rows --}}
 <flux:table>
-    @foreach($properties as $property)
+    @foreach($items as $item)
     <flux:table.row>
-        <flux:table.cell>{{ $property->title }}</flux:table.cell>
-        <flux:table.cell>{{ $property->price }}</flux:table.cell>
-        <flux:table.cell>{{ $property->colonia }}</flux:table.cell>
-        <flux:table.cell>{{ $property->bedrooms }}</flux:table.cell>
+        <flux:table.cell>{{ $item->title }}</flux:table.cell>
+        <flux:table.cell>{{ $item->price }}</flux:table.cell>
+        <flux:table.cell>{{ $item->category }}</flux:table.cell>
+        <flux:table.cell>{{ $item->quantity }}</flux:table.cell>
     </flux:table.row>
     @endforeach
 </flux:table>
 
 {{-- ✅ PREFER: Card-based list with aggregated info --}}
 <div class="space-y-3">
-    @foreach($properties as $property)
-    <x-property-card :property="$property" wire:key="property-{{ $property->id }}" />
+    @foreach($items as $item)
+    <x-item-card :item="$item" wire:key="item-{{ $item->id }}" />
     @endforeach
 </div>
 ```
@@ -71,8 +157,8 @@ Every page follows this structure:
         </div>
         <div class="flex items-center gap-2">
             {{-- Secondary actions first, primary last (rightmost = most important) --}}
-            <flux:button variant="ghost" icon="funnel">Filtros</flux:button>
-            <flux:button variant="primary" icon="plus">Nueva Propiedad</flux:button>
+            <flux:button variant="ghost" icon="funnel">Filters</flux:button>
+            <flux:button variant="primary" icon="plus">New Item</flux:button>
         </div>
     </div>
 
@@ -95,14 +181,14 @@ Group related fields/info into sections with clear headings.
     {{-- Each section is a visual group --}}
     <section>
         <div class="mb-4">
-            <flux:heading size="lg">Información General</flux:heading>
-            <flux:text size="sm" class="mt-1">Datos básicos de la propiedad</flux:text>
+            <flux:heading size="lg">General Information</flux:heading>
+            <flux:text size="sm" class="mt-1">Basic details about this record</flux:text>
         </div>
         <flux:card>
             <div class="space-y-4">
                 {{-- Fields inside the card --}}
                 <flux:field>
-                    <flux:label>Título</flux:label>
+                    <flux:label>Title</flux:label>
                     <flux:input wire:model="title" />
                 </flux:field>
                 {{-- ... --}}
@@ -112,10 +198,10 @@ Group related fields/info into sections with clear headings.
 
     <section>
         <div class="mb-4">
-            <flux:heading size="lg">Ubicación</flux:heading>
+            <flux:heading size="lg">Details</flux:heading>
         </div>
         <flux:card>
-            {{-- Location fields --}}
+            {{-- Additional fields --}}
         </flux:card>
     </section>
 </div>
@@ -128,28 +214,28 @@ For creation or onboarding flows with 3+ logical groups.
 ```blade
 {{-- Use Flux tabs as a visual stepper --}}
 <flux:tabs variant="segmented" wire:model="currentStep">
-    <flux:tab name="basics" icon="home">Datos</flux:tab>
-    <flux:tab name="location" icon="map-pin">Ubicación</flux:tab>
-    <flux:tab name="media" icon="photo">Fotos</flux:tab>
-    <flux:tab name="review" icon="check">Revisar</flux:tab>
+    <flux:tab name="basics" icon="home">Basics</flux:tab>
+    <flux:tab name="details" icon="list-bullet">Details</flux:tab>
+    <flux:tab name="media" icon="photo">Media</flux:tab>
+    <flux:tab name="review" icon="check">Review</flux:tab>
 </flux:tabs>
 
 <div class="mt-6">
     @if($currentStep === 'basics')
         {{-- Step 1 content --}}
-    @elseif($currentStep === 'location')
+    @elseif($currentStep === 'details')
         {{-- Step 2 content --}}
     @endif
 </div>
 
 <div class="flex justify-between mt-6">
     <flux:button variant="ghost" wire:click="previousStep" :disabled="$currentStep === 'basics'">
-        Anterior
+        Previous
     </flux:button>
     @if($currentStep === 'review')
-        <flux:button variant="primary" wire:click="submit">Publicar</flux:button>
+        <flux:button variant="primary" wire:click="submit">Submit</flux:button>
     @else
-        <flux:button variant="primary" wire:click="nextStep">Siguiente</flux:button>
+        <flux:button variant="primary" wire:click="nextStep">Next</flux:button>
     @endif
 </div>
 ```
@@ -161,7 +247,7 @@ For creation or onboarding flows with 3+ logical groups.
 <div class="mb-4">
     <flux:input
         wire:model.live.debounce.300ms="search"
-        placeholder="Buscar propiedades..."
+        placeholder="Search..."
         icon="magnifying-glass"
         clearable
     />
@@ -169,14 +255,14 @@ For creation or onboarding flows with 3+ logical groups.
 
 {{-- Quick filters: inline for the 2-3 most used --}}
 <div class="flex items-center gap-2 mb-4">
-    <flux:select wire:model.live="propertyType" placeholder="Tipo" size="sm">
-        <flux:select.option value="casa">Casa</flux:select.option>
-        <flux:select.option value="departamento">Departamento</flux:select.option>
+    <flux:select wire:model.live="type" placeholder="Type" size="sm">
+        <flux:select.option value="option-a">Option A</flux:select.option>
+        <flux:select.option value="option-b">Option B</flux:select.option>
     </flux:select>
 
     {{-- More filters in a modal/popover for everything else --}}
     <flux:button variant="ghost" size="sm" icon="adjustments-horizontal" wire:click="$toggle('showFilters')">
-        Más filtros
+        More filters
         @if($activeFilterCount > 0)
             <flux:badge size="sm" color="indigo" inset="right">{{ $activeFilterCount }}</flux:badge>
         @endif
@@ -191,19 +277,19 @@ For creation or onboarding flows with 3+ logical groups.
             {{ $filter['label'] }}
         </flux:badge>
     @endforeach
-    <flux:button variant="ghost" size="xs" wire:click="clearAllFilters">Limpiar todo</flux:button>
+    <flux:button variant="ghost" size="xs" wire:click="clearAllFilters">Clear all</flux:button>
 </div>
 @endif
 
 {{-- Results --}}
 <div class="space-y-3">
-    @forelse($properties as $property)
-        <x-property-card :property="$property" wire:key="prop-{{ $property->id }}" />
+    @forelse($items as $item)
+        <x-item-card :item="$item" wire:key="item-{{ $item->id }}" />
     @empty
         <x-empty-state
             icon="magnifying-glass"
-            title="Sin resultados"
-            description="Intenta con otros filtros o términos de búsqueda"
+            title="No results"
+            description="Try different filters or search terms"
         />
     @endforelse
 </div>
@@ -223,17 +309,17 @@ For creation or onboarding flows with 3+ logical groups.
 ```blade
 {{-- KPI row: 3-4 stats maximum --}}
 <div class="grid grid-cols-2 gap-4 mb-6 sm:grid-cols-4">
-    <x-stat-card label="Propiedades" :value="$this->propertyCount" icon="home" />
-    <x-stat-card label="Colecciones" :value="$this->collectionCount" icon="folder" />
-    <x-stat-card label="Clientes" :value="$this->clientCount" icon="users" />
-    <x-stat-card label="Compartidas" :value="$this->sharedCount" icon="share" />
+    <x-stat-card label="Items" :value="$this->itemCount" icon="cube" />
+    <x-stat-card label="Orders" :value="$this->orderCount" icon="shopping-cart" />
+    <x-stat-card label="Users" :value="$this->userCount" icon="users" />
+    <x-stat-card label="Revenue" :value="$this->revenueFormatted" icon="currency-dollar" />
 </div>
 
 {{-- Primary content: the thing the user came here to do --}}
 <section class="mb-6">
     <div class="flex items-center justify-between mb-4">
-        <flux:heading size="lg">Actividad Reciente</flux:heading>
-        <flux:button variant="ghost" size="sm" href="{{ route('agent.activity') }}">Ver todo</flux:button>
+        <flux:heading size="lg">Recent Activity</flux:heading>
+        <flux:button variant="ghost" size="sm" href="{{ route('activity.index') }}">View all</flux:button>
     </div>
     {{-- Activity feed or recent items --}}
 </section>
@@ -241,9 +327,9 @@ For creation or onboarding flows with 3+ logical groups.
 {{-- Secondary content --}}
 <section>
     <div class="flex items-center justify-between mb-4">
-        <flux:heading size="lg">Colecciones Recientes</flux:heading>
+        <flux:heading size="lg">Recent Orders</flux:heading>
     </div>
-    {{-- Recent collections --}}
+    {{-- Recent orders/items --}}
 </section>
 ```
 
@@ -283,28 +369,28 @@ Instead of a flat page with all data, use **collapsible sections** or **tabs** t
         <div class="shrink-0">
             {{-- Cover image --}}
         </div>
-        {{-- Key info: title, price, location, status --}}
+        {{-- Key info: title, price, status --}}
         <div class="flex-1">
-            <flux:heading size="xl">{{ $property->title }}</flux:heading>
-            <x-price-display :amount="$property->price" class="mt-1" />
-            <flux:text class="mt-2">{{ $property->full_address }}</flux:text>
+            <flux:heading size="xl">{{ $item->title }}</flux:heading>
+            <x-price-display :amount="$item->price" class="mt-1" />
+            <flux:text class="mt-2">{{ $item->description }}</flux:text>
             <div class="flex gap-2 mt-3">
-                <x-status-badge :status="$property->status" />
-                <flux:badge>{{ $property->property_type_label }}</flux:badge>
+                <x-status-badge :status="$item->status" />
+                <flux:badge>{{ $item->type_label }}</flux:badge>
             </div>
         </div>
         {{-- Actions --}}
         <div class="flex flex-col gap-2 shrink-0">
-            <flux:button variant="primary" icon="share">Compartir</flux:button>
-            <flux:button variant="ghost" icon="pencil">Editar</flux:button>
+            <flux:button variant="primary" icon="share">Share</flux:button>
+            <flux:button variant="ghost" icon="pencil">Edit</flux:button>
         </div>
     </div>
 
     {{-- Tabbed or accordion detail sections --}}
     <flux:tabs wire:model="activeTab">
-        <flux:tab name="details" icon="list-bullet">Detalles</flux:tab>
-        <flux:tab name="images" icon="photo">Fotos</flux:tab>
-        <flux:tab name="activity" icon="clock">Historial</flux:tab>
+        <flux:tab name="details" icon="list-bullet">Details</flux:tab>
+        <flux:tab name="images" icon="photo">Images</flux:tab>
+        <flux:tab name="activity" icon="clock">Activity</flux:tab>
     </flux:tabs>
 
     <div class="mt-4">

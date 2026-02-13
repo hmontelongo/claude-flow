@@ -58,9 +58,9 @@ Footer actions (if needed)
 - **Help text**: Complex fields get a one-line description beneath them.
 - **Empty states**: EVERY list/collection has an empty state with:
   - An icon that represents the empty concept
-  - A short message ("No hay propiedades aún")
+  - A short message (e.g., "No items yet" / "No hay registros aún")
   - A CTA button to add the first item
-- **Error messages**: Specific, actionable, in Spanish. Not "Error" — "El precio debe ser mayor a 0"
+- **Error messages**: Specific, actionable, in the project's language. Not "Error" — "The value must be greater than 0" / "El valor debe ser mayor a 0"
 - **Loading states**: Every async action shows `wire:loading` feedback
 - **Success feedback**: Flux toast after save/delete/important actions
 - **Confirmations**: Only for destructive or irreversible actions. Use `flux:modal` with clear consequences.
@@ -121,9 +121,5 @@ Does this page follow established patterns from the rest of the app? If not, wha
 - Test coverage
 
 ## Context
-- This is a product for the **Mexican real estate market**
-- All user-facing copy should be in **Spanish**
-- The primary users are **real estate agents** — busy, mobile-heavy, often in the field
-- Agents care about speed: how fast can they respond to a client's WhatsApp request?
-- Currency: **$XX,XXX MXN** format
-- Addresses: Colonia, CP, Municipio, Estado
+
+Read the project's CLAUDE.md for domain, users, locale, currency, and key workflows. The `/setup-project` skill generates this context. Do not assume any domain — always check CLAUDE.md before reviewing.

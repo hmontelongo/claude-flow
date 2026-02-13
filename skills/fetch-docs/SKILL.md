@@ -1,6 +1,7 @@
 ---
 name: fetch-docs
 description: "Fetch and cache documentation for external APIs and services. Use when integrating with any non-Laravel third-party service, API, or SDK. This skill ensures we read actual documentation instead of making overly specific web searches that produce poor results."
+argument-hint: "[service name or docs URL]"
 ---
 
 ## The Problem This Solves
@@ -36,22 +37,24 @@ Include:
 ### Example
 
 ```markdown
-# .ai/docs/zenrows.md
+# .ai/docs/stripe.md
 
-## ZenRows API
-- Base URL: https://api.zenrows.com/v1/
-- Auth: API key as query parameter `?apikey=YOUR_KEY`
-- Rate limit: Depends on plan
+## Stripe API
+- Base URL: https://api.stripe.com/v1/
+- Auth: Bearer token via `Authorization: Bearer sk_test_...`
+- Rate limit: 100 read requests/sec, 100 write requests/sec
 
 ## Key Endpoints
-- `GET /` — Scrape a URL. Params: `url`, `js_render`, `premium_proxy`, `css_extractor`
-- CSS extractors return structured JSON when provided
+- `POST /customers` — Create a customer
+- `POST /checkout/sessions` — Create a Checkout session
+- `POST /subscriptions` — Create a subscription
+- `GET /invoices` — List invoices for a customer
 
 ## Our Usage
-- We use ZenRows for scraping real estate platforms
-- Always use `js_render=true` for SPA sites
-- Use `premium_proxy=true` for sites with anti-bot protection
-- CSS extractors are defined per-platform in our scraper classes
+- We use Stripe for payment processing via Checkout sessions
+- Webhooks handled at `/webhooks/stripe` (verified via signature)
+- Using `cashier` package for subscription management
+- All amounts in cents (e.g., $10.00 = 1000)
 ```
 
 ### Step 4: Reference in Future Sessions

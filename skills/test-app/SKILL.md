@@ -1,19 +1,18 @@
 ---
 name: test-app
 description: "Write regression tests for application flows using Pest 4 browser tests. Use when asked to 'write a test for this', 'add test coverage', or 'make sure this doesn't break'. This is for PERMANENT tests that live in the codebase and run in CI. For visual verification during development (seeing what you built), use the verify-ui skill instead."
+argument-hint: "[feature or flow to test]"
 ---
 
-## Important Distinction
+> **This skill is for permanent regression tests — written AFTER a feature is implemented and visually verified. If you're still building, use `/verify-ui` instead. Don't write a Pest test just to check your own work.**
 
-**This skill is for regression tests** — permanent, repeatable tests that live in `tests/Browser/` and run in CI to prevent regressions.
-
-**This is NOT for visual verification during development.** If you just built a page and need to see if it works, use the `verify-ui` skill with Playwright CLI. Don't write a Pest test just to check your own work — that's what the browser is for.
+**Project-specific:** Check CLAUDE.md for the app's URL structure, domain models, and test credentials. Adapt the examples below to match your project.
 
 ## When to Write Regression Tests
 
 - After a feature is implemented AND visually verified
 - When the user explicitly asks for test coverage
-- For critical flows that must not break (login, payment, sharing)
+- For critical flows that must not break (login, payment, checkout)
 - Before submitting a PR
 
 ## Pest 4 Browser Test Patterns
@@ -24,7 +23,7 @@ it('can view the dashboard', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $page = visit('/agent/dashboard');
+    $page = visit('/dashboard');
     $page->assertSee('Dashboard')
          ->assertNoJavascriptErrors();
 });
@@ -32,37 +31,36 @@ it('can view the dashboard', function () {
 
 ### Form Submission
 ```php
-it('can create a property', function () {
+it('can create an item', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $page = visit('/agent/properties/create');
-    $page->fill('title', 'Casa en Zapopan')
-         ->fill('price', '2500000')
-         ->select('property_type', 'casa')
-         ->click('Guardar')
-         ->assertSee('Propiedad creada');
+    $page = visit('/items/create');
+    $page->fill('name', 'Sample Item')
+         ->fill('price', '99.99')
+         ->select('category', 'general')
+         ->click('Save')
+         ->assertSee('Item created');
 
-    expect(Property::where('title', 'Casa en Zapopan')->exists())->toBeTrue();
+    expect(Item::where('name', 'Sample Item')->exists())->toBeTrue();
 });
 ```
 
 ### Multi-Step Flow
 ```php
-it('can create and share a collection', function () {
+it('can create and publish a record', function () {
     $user = User::factory()->create();
-    $client = Client::factory()->for($user)->create();
     $this->actingAs($user);
 
-    $page = visit('/agent/collections/create');
-    $page->fill('name', 'Opciones para Juan')
-         ->select('client_id', $client->id)
-         ->click('Crear')
-         ->assertSee('Colección creada');
+    $page = visit('/records/create');
+    $page->fill('title', 'My New Record')
+         ->fill('description', 'A test record')
+         ->click('Create')
+         ->assertSee('Record created');
 
-    $collection = Collection::where('name', 'Opciones para Juan')->first();
-    expect($collection)->not->toBeNull();
-    expect($collection->share_token)->not->toBeNull();
+    $record = Record::where('title', 'My New Record')->first();
+    expect($record)->not->toBeNull();
+    expect($record->status)->toBe('draft');
 });
 ```
 
@@ -72,10 +70,9 @@ it('loads all critical pages without errors', function () {
     $this->actingAs(User::factory()->create());
 
     $pages = visit([
-        '/agent/dashboard',
-        '/agent/properties',
-        '/agent/collections',
-        '/agent/clients',
+        '/dashboard',
+        '/items',
+        '/settings',
     ]);
 
     $pages->assertNoJavascriptErrors()
@@ -85,13 +82,13 @@ it('loads all critical pages without errors', function () {
 
 ### Validation Tests
 ```php
-it('shows validation errors for empty property form', function () {
+it('shows validation errors for empty form', function () {
     $this->actingAs(User::factory()->create());
 
-    $page = visit('/agent/properties/create');
-    $page->click('Guardar')
-         ->assertSee('El título es obligatorio')
-         ->assertSee('El precio es obligatorio');
+    $page = visit('/items/create');
+    $page->click('Save')
+         ->assertSee('The name field is required')
+         ->assertSee('The price field is required');
 });
 ```
 
@@ -103,11 +100,11 @@ it('shows validation errors for empty property form', function () {
 ## Running Tests
 ```bash
 # Specific browser test
-php artisan test tests/Browser/PropertyCreationTest.php --compact
+php artisan test tests/Browser/ItemCreationTest.php --compact
 
 # All browser tests
 php artisan test tests/Browser/ --compact
 
 # Specific test name
-php artisan test --compact --filter="can create a property"
+php artisan test --compact --filter="can create an item"
 ```

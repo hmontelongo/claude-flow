@@ -22,11 +22,11 @@
 ```blade
 {{-- ❌ NEVER: Fighting the component's design --}}
 <flux:button class="bg-blue-600 hover:bg-blue-700 rounded-xl px-8 py-4 text-lg font-bold shadow-lg">
-    Guardar
+    Save
 </flux:button>
 
 {{-- ✅ CORRECT: Use the component's API --}}
-<flux:button variant="primary" size="lg">Guardar</flux:button>
+<flux:button variant="primary" size="lg">Save</flux:button>
 ```
 
 **The only Tailwind classes acceptable on Flux components are:**
@@ -49,11 +49,11 @@
 {{-- ✅ CORRECT: Flux modal --}}
 <flux:modal name="confirm-delete" class="max-w-sm">
     <div class="space-y-4">
-        <flux:heading size="lg">¿Eliminar propiedad?</flux:heading>
-        <flux:text>Esta acción no se puede deshacer.</flux:text>
+        <flux:heading size="lg">Delete this record?</flux:heading>
+        <flux:text>This action cannot be undone.</flux:text>
         <div class="flex gap-2 justify-end">
-            <flux:button variant="ghost" x-on:click="$flux.modal.close('confirm-delete')">Cancelar</flux:button>
-            <flux:button variant="danger" wire:click="delete">Eliminar</flux:button>
+            <flux:button variant="ghost" x-on:click="$flux.modal.close('confirm-delete')">Cancel</flux:button>
+            <flux:button variant="danger" wire:click="delete">Delete</flux:button>
         </div>
     </div>
 </flux:modal>
@@ -84,8 +84,8 @@
 ```blade
 {{-- ❌ NEVER --}}
 @php
-    $filtered = $properties->filter(fn($p) => $p->price > 1000000);
-    $grouped = $filtered->groupBy('colonia');
+    $filtered = $items->filter(fn($i) => $i->price > 1000);
+    $grouped = $filtered->groupBy('category');
     $stats = [
         'total' => $filtered->count(),
         'avg' => $filtered->avg('price'),
@@ -93,11 +93,11 @@
 @endphp
 
 {{-- ✅ CORRECT: Use computed properties in the Livewire component --}}
-{{-- The view only references: $this->filteredProperties, $this->stats --}}
+{{-- The view only references: $this->filteredItems, $this->stats --}}
 ```
 
 ### 6. Inconsistent Patterns Across Pages
-If the property list uses cards, the collection list uses cards, and the client list uses cards — do NOT make the new "publishers" page use a table. **Same data type = same pattern.**
+If the items list uses cards, the orders list uses cards, and the users list uses cards — do NOT make the new "reports" page use a table. **Same data type = same pattern.**
 
 ### 7. Missing Essential UX Elements
 Every interactive page MUST have:
@@ -152,3 +152,17 @@ The project's visual identity comes from Flux's design system, not from custom T
 {{-- 3. Alpine.js (x-data, @click) — minimal, last resort --}}
 {{-- 4. NEVER vanilla JS --}}
 ```
+
+### 11. Breaking Accessibility
+```blade
+{{-- ❌ NEVER: Click handlers on non-interactive elements --}}
+<div @click="doSomething()">Click me</div>
+<span wire:click="save">Save</span>
+
+{{-- ✅ CORRECT: Use semantic interactive elements --}}
+<flux:button wire:click="save">Save</flux:button>
+<button @click="doSomething()">Click me</button>
+```
+- Never use `tabindex` overrides on Flux components — they handle keyboard navigation.
+- Never omit `alt` text on images. Empty `alt=""` is acceptable for decorative images only.
+- Never remove focus outlines. Flux handles focus styling.

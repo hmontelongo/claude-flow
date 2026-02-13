@@ -81,7 +81,7 @@ Prioritized list of changes, from most to least important
 - Provide **concrete alternatives**, not vague advice.
 - Check sibling files for existing patterns before flagging convention mismatches.
 - Focus on recently written/changed code, not the entire codebase.
-- This project uses **Laravel 12, Livewire 4, Flux UI Pro v2, Pest 4, Tailwind 4**.
+- Check CLAUDE.md and `composer.json` for the exact stack versions used in this project.
 
 ## What NOT to Flag
 

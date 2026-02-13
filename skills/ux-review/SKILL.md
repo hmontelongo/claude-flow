@@ -1,5 +1,7 @@
 ---
+name: ux-review
 description: Run UX review on a page or flow using the ux-reviewer agent. Use after implementing or modifying any user-facing interface.
+argument-hint: "[page or route to review]"
 ---
 
 Review the UX of a recently built or modified interface using the ux-reviewer agent.

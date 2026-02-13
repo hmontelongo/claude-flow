@@ -1,5 +1,6 @@
 ---
-description: Run two-step code review (craftsmanship + formatting)
+name: code-review
+description: Run two-step code review (craftsmanship + formatting). Use after completing a feature, refactoring, or before a PR.
 ---
 
 Review code changes using the code-reviewer agent.

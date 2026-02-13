@@ -5,63 +5,41 @@ Goes **on top of** what Laravel Boost already generates.
 
 ---
 
-## How Everything Activates (The Honest Map)
+## How Everything Activates
 
-Claude Code has 4 types of configuration, and they activate differently. Understanding this is essential — otherwise you're just hoping files get used.
+Claude Code has 3 types of configuration in this repo, and they activate differently.
 
 ### Guidelines → Always On (Automatic)
 
-Files in `.ai/guidelines/` are loaded by Boost into CC's context on every session. CC reads them like it reads CLAUDE.md. You never invoke them — they're just *there*.
+Files in `.ai/guidelines/` are loaded by Boost into CC's context every session. You never invoke them — they're just *there*.
 
 | File | What it enforces |
 |------|-----------------|
-| `guidelines/flux-ui/components.md` | Use Flux components first, extract Blade components, no raw HTML |
-| `guidelines/flux-ui/anti-patterns.md` | 10 explicit things CC must NEVER do (raw buttons, custom modals, Alpine for forms, etc.) |
+| `guidelines/flux-ui/components.md` | Flux-first hierarchy, component extraction, no raw HTML, no Alpine abuse |
+| `guidelines/flux-ui/anti-patterns.md` | 11 explicit things CC must NEVER do |
+| `guidelines/laravel/conventions.md` | Architecture layers, Eloquent, return types, Form Requests, testing |
+| `guidelines/livewire/conventions.md` | Single-file components, state, wire:model, computed properties, performance |
 
 **Reliability: High.** Boost loads these automatically. CC sees them every session.
 
-### Commands → You Type Them (Explicit)
+### Skills → You Type Them (Explicit) or Auto-Invoke (Unreliable)
 
-You type `/command-name` in Claude Code. Deterministic, reliable, you control when they fire.
+You type `/skill-name` in Claude Code. Skills can also auto-invoke based on their description, but **auto-invocation is inconsistent** — treat it as a bonus, not a guarantee.
 
-| Command | When you use it | What it does |
-|---------|----------------|--------------|
-| `/setup-project` | Once, at project start | Asks you questions, appends project-specific rules to CLAUDE.md |
+| Skill | When you use it | What it does |
+|-------|----------------|--------------|
+| `/setup-project` | Once, at project start | Asks questions, appends project-specific rules to CLAUDE.md |
 | `/code-review` | After completing a feature | Calls the `code-reviewer` agent, then runs `pint --dirty` |
 | `/ux-review` | After building/changing any UI | Calls the `ux-reviewer` agent to evaluate workflow, hierarchy, patterns |
 | `/design-system` | Once, before building any UI | Defines colors, spacing, creates foundational Blade components |
 | `/test-app` | When you want regression tests | CC writes Pest 4 browser tests for the specified flow |
 | `/verify-ui` | During UI development | CC opens browser, screenshots, evaluates, iterates |
 | `/fetch-docs` | When integrating external APIs | CC reads official docs instead of Googling |
+| `/ui-patterns` | Before building any new page | Reference patterns for lists, forms, dashboards, detail pages |
 
-**Reliability: High.** You type it, it runs.
+**Reliability: High when typed. Medium for auto-invocation.**
 
-**Note:** Skills and commands both create slash commands. A skill at `skills/verify-ui/SKILL.md` becomes `/verify-ui`. A command at `commands/code-review.md` becomes `/code-review`. The difference: skills can *also* auto-invoke (see below), and skills can bundle supporting files in their folder.
-
-### Agents → Called By Commands (Reliable) or Auto-Invoked (Less Reliable)
-
-Agents are specialized CC instances with their own context window. They're called by commands or by CC's judgment.
-
-| Agent | Reliable trigger | Auto-invoke trigger |
-|-------|-----------------|-------------------|
-| `code-reviewer` | `/code-review` command explicitly calls it | CC *may* auto-invoke when it sees code review context |
-| `ux-reviewer` | `/ux-review` command explicitly calls it | CC *may* auto-invoke when building UI — but don't count on it |
-
-**Reliability: High when called by commands. Medium when relying on auto-invocation.**
-
-### Skills → Slash Command (Reliable) or Auto-Invoke (Unreliable)
-
-Skills have descriptions that *should* tell CC when to auto-invoke. Community feedback says: **auto-invocation is inconsistent**. So we treat it as a bonus, not a guarantee.
-
-| Skill | Reliable trigger | What CC *should* auto-invoke for |
-|-------|-----------------|--------------------------------|
-| `verify-ui` | `/verify-ui` or CLAUDE.md rule (see below) | After writing any UI code |
-| `design-system` | `/design-system` | When starting UI work or noticing inconsistencies |
-| `ui-patterns` | `/ui-patterns` | Before building any new page/component |
-| `test-app` | `/test-app` | When asked to write tests |
-| `fetch-docs` | `/fetch-docs` | When integrating external APIs |
-
-**The verify-ui problem:** This is the most critical skill — CC must see what it builds. We can't rely on auto-invocation. That's why `/setup-project` appends this hard rule to CLAUDE.md:
+**The verify-ui problem:** CC must see what it builds. We can't rely on auto-invocation. That's why `/setup-project` appends this hard rule to CLAUDE.md:
 
 ```
 ### Visual Verification (MANDATORY)
@@ -70,29 +48,31 @@ After implementing or modifying ANY user-facing code, you MUST:
 2. Take a screenshot and evaluate the result
 3. Fix any issues found
 4. Verify again until the implementation is solid
-You do NOT tell the user "I've implemented X" without having seen it running.
-Use the verify-ui skill for the full verification checklist.
 ```
 
-This CLAUDE.md rule is the enforcement mechanism. The skill has the detailed instructions. Both are needed.
+### Agents → Called By Skills (Reliable)
+
+Agents are specialized CC instances with their own context window. Called by skills.
+
+| Agent | Triggered by | What it does |
+|-------|-------------|-------------|
+| `code-reviewer` | `/code-review` | Reviews code for Laravel craftsmanship and simplicity |
+| `ux-reviewer` | `/ux-review` | Evaluates UX: workflow logic, hierarchy, consistency |
 
 ---
 
 ## The Development Workflow
 
-Here's when each piece fires in a typical feature build:
-
 ```
 1. START SESSION
-   └── CC automatically loads: CLAUDE.md + Boost guidelines + Flux guidelines
-       (guidelines/flux-ui/components.md and anti-patterns.md are active)
+   └── CC automatically loads: CLAUDE.md + Boost guidelines + all guidelines/
 
 2. PLAN THE UI
    └── You type: /ux-review (or /ui-patterns to review available patterns)
        └── ux-reviewer agent plans the approach before any code is written
 
 3. BUILD
-   └── CC writes code following Flux guidelines (auto-loaded)
+   └── CC writes code following guidelines (auto-loaded)
    └── After each visual change, CC must verify (CLAUDE.md rule):
        └── Uses verify-ui skill → opens browser, screenshots, evaluates, iterates
 
@@ -114,26 +94,28 @@ Here's when each piece fires in a typical feature build:
 ```
 claude-code-config/
 ├── README.md                               ← This file
+├── settings.local.json                     ← Hooks config (copy to .claude/ per project)
 ├── agents/
 │   ├── code-reviewer.md                    ← Subagent for code quality review
 │   └── ux-reviewer.md                      ← Subagent for UX/workflow review
-├── commands/
-│   ├── setup-project.md                    ← /setup-project (one-time project config)
-│   ├── code-review.md                      ← /code-review (calls agent + pint)
-│   └── ux-review.md                        ← /ux-review (calls agent, opens browser)
 ├── skills/
+│   ├── setup-project/SKILL.md              ← /setup-project (one-time project config)
+│   ├── code-review/SKILL.md                ← /code-review (calls agent + pint)
+│   ├── ux-review/SKILL.md                  ← /ux-review (calls agent, opens browser)
 │   ├── verify-ui/SKILL.md                  ← /verify-ui (MANDATORY build-verify loop)
 │   ├── test-app/SKILL.md                   ← /test-app (Pest 4 regression tests)
 │   ├── ui-patterns/SKILL.md                ← /ui-patterns (pattern library reference)
 │   ├── design-system/SKILL.md              ← /design-system (establish visual language)
 │   └── fetch-docs/SKILL.md                 ← /fetch-docs (cache external API docs)
 └── guidelines/
-    └── flux-ui/
-        ├── components.md                   ← Always loaded: component-first rules
-        └── anti-patterns.md                ← Always loaded: 10 explicit prohibitions
+    ├── flux-ui/
+    │   ├── components.md                   ← Always loaded: Flux-first rules (~30 lines)
+    │   └── anti-patterns.md                ← Always loaded: 11 explicit prohibitions
+    ├── laravel/
+    │   └── conventions.md                  ← Always loaded: architecture, Eloquent, testing
+    └── livewire/
+        └── conventions.md                  ← Always loaded: state, wire:model, performance
 ```
-
-**Why SKILL.md?** Claude Code requires skills to be named `SKILL.md` — the folder name IS the skill name (`verify-ui/SKILL.md` → `/verify-ui`).
 
 ---
 
@@ -142,7 +124,7 @@ claude-code-config/
 ### One-Time Prerequisites
 
 ```bash
-# Playwright CLI (for visual verification)
+# Playwright CLI (for visual verification during development)
 npm install -g @playwright/cli@latest
 playwright-cli install-browser
 
@@ -150,7 +132,7 @@ playwright-cli install-browser
 claude mcp add -s user context7 npx -y @upstash/context7-mcp@latest
 ```
 
-### Per Project (6 commands, ~15 minutes)
+### Per Project
 
 ```bash
 # 1. Create project (choose Livewire starter, Pest, your DB)
@@ -160,18 +142,20 @@ laravel new project-name && cd project-name
 composer require laravel/boost --dev && php artisan boost:install
 
 # 3. Copy this repo into the project
-cp -r ~/dev/claude-code-config/agents/ .claude/agents/
-cp -r ~/dev/claude-code-config/skills/ .claude/skills/
-cp -r ~/dev/claude-code-config/commands/ .claude/commands/
-cp -r ~/dev/claude-code-config/guidelines/ .ai/guidelines/
+cp -r ~/Code/claude-code-config/agents/ .claude/agents/
+cp -r ~/Code/claude-code-config/skills/ .claude/skills/
+cp -r ~/Code/claude-code-config/guidelines/ .ai/guidelines/
 
-# 4. Open Claude Code
+# 4. Copy hooks config (auto-formats PHP with Pint after every edit)
+cp ~/Code/claude-code-config/settings.local.json .claude/settings.local.json
+
+# 5. Open Claude Code
 claude
 
-# 5. Configure project specifics (appends rules to CLAUDE.md including verify-ui mandate)
+# 6. Configure project specifics (appends rules to CLAUDE.md including verify-ui mandate)
 > /setup-project
 
-# 6. Establish design system before any UI work
+# 7. Establish design system before any UI work
 > /design-system
 ```
 
@@ -181,11 +165,7 @@ claude
 
 ### Per-Project Customization
 
-| File | What to Change |
-|------|----------------|
-| `skills/test-app/SKILL.md` | URLs, test credentials, app structure |
-| `agents/code-reviewer.md` | Domain-specific concerns (optional) |
-| `agents/ux-reviewer.md` | User persona if different from default |
+All project-specific context lives in CLAUDE.md (generated by `/setup-project`). Agents and skills read from CLAUDE.md — no manual editing of agent files needed.
 
 ---
 
@@ -202,18 +182,22 @@ boost:install
 └── Herd MCP
 
 THIS REPO
-├── .ai/guidelines/flux-ui/ → always loaded (Boost picks these up)
-├── .claude/commands/ → you type /command-name
-├── .claude/agents/ → called by commands
-└── .claude/skills/ → you type /skill-name (auto-invoke is unreliable)
+├── .ai/guidelines/ → always loaded (Flux UI, Laravel, Livewire conventions)
+├── .claude/skills/ → you type /skill-name
+├── .claude/agents/ → called by skills
+└── .claude/settings.local.json → hooks (auto-format with Pint)
 
 /setup-project appends to CLAUDE.md
 └── verify-ui mandate (always loaded, enforced every session)
 └── git safety rules
-└── project-specific context
+└── project-specific context (domain, users, locale, currency)
 ```
+
+## Hooks
+
+The `settings.local.json` file configures a PostToolUse hook that auto-runs `vendor/bin/pint` on any PHP file CC writes or edits. Copy it to `.claude/settings.local.json` in each project. It's gitignored by default (`.claude/settings.local.json` is not committed).
 
 ## Maintenance
 
 **Shared files**: Edit here → push to GitHub → `cp` into active projects.
-**Per project**: New patterns → update ui-patterns skill here. New Blade components → update components.md here. Boost updates via `php artisan boost:update`.
+**Per project**: New patterns → update ui-patterns skill here. Boost updates via `php artisan boost:update`.
