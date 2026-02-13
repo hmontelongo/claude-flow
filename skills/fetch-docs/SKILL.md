@@ -6,7 +6,7 @@ argument-hint: "[service name or docs URL]"
 
 ## The Problem This Solves
 
-When CC needs to integrate with an external API (like ZenRows, WhatsApp Business, Stripe, etc.), its default behavior is to search Google for "how to use [service] to do [specific thing]" — which produces blog posts and Stack Overflow answers instead of actual documentation.
+When CC needs to integrate with an external API (like Stripe, Twilio, SendGrid, etc.), its default behavior is to search Google for "how to use [service] to do [specific thing]" — which produces blog posts and Stack Overflow answers instead of actual documentation.
 
 ## The Process
 
@@ -60,7 +60,7 @@ Include:
 ### Step 4: Reference in Future Sessions
 In CLAUDE.md or relevant skill, add a pointer:
 ```
-For ZenRows API integration details, see .ai/docs/zenrows.md
+For Stripe API integration details, see .ai/docs/stripe.md
 ```
 
 ## DO NOT

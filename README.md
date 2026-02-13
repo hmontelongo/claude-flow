@@ -1,4 +1,4 @@
-# claude-code-config
+# claude-flow
 
 Shared Claude Code configuration for Laravel + Livewire + Flux UI projects.
 Goes **on top of** what Laravel Boost already generates.
@@ -92,7 +92,7 @@ Agents are specialized CC instances with their own context window. Called by ski
 ## Repo Structure
 
 ```
-claude-code-config/
+claude-flow/
 ├── README.md                               ← This file
 ├── settings.local.json                     ← Hooks config (copy to .claude/ per project)
 ├── agents/
@@ -142,12 +142,12 @@ laravel new project-name && cd project-name
 composer require laravel/boost --dev && php artisan boost:install
 
 # 3. Copy this repo into the project
-cp -r ~/Code/claude-code-config/agents/ .claude/agents/
-cp -r ~/Code/claude-code-config/skills/ .claude/skills/
-cp -r ~/Code/claude-code-config/guidelines/ .ai/guidelines/
+cp -r ~/Code/claude-flow/agents/ .claude/agents/
+cp -r ~/Code/claude-flow/skills/ .claude/skills/
+cp -r ~/Code/claude-flow/guidelines/ .ai/guidelines/
 
 # 4. Copy hooks config (auto-formats PHP with Pint after every edit)
-cp ~/Code/claude-code-config/settings.local.json .claude/settings.local.json
+cp ~/Code/claude-flow/settings.local.json .claude/settings.local.json
 
 # 5. Open Claude Code
 claude
