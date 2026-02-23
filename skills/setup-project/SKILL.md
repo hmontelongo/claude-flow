@@ -8,25 +8,20 @@ You are helping set up Claude Code for a new Laravel project. Boost has already 
 
 **Ask the user these questions, one group at a time:**
 
-## Group 1: Project Identity
+## Group 1: Project Context
 1. What does this project do? (one sentence)
 2. Who are the primary users?
-3. What language should user-facing copy be in?
-4. What currency format does this project use?
+3. Locale: what language and region? (e.g., "Spanish — Spain", "English — US") Mention currency if the project handles money.
 
-## Group 2: Architecture
-5. Does this project have multiple subdomains or portals? If yes, list them (e.g., admin.app.test, portal.app.test)
-6. Will you use Horizon for queues? If yes, what queue names do you plan to use?
-7. Are there any external APIs or services this project will integrate with?
+## Group 2: Design System
+4. What's the personality of this app? (corporate/serious, friendly/casual, or minimal/clean)
+5. What color should represent the primary action? (Flux default is indigo — change or keep?)
+6. Preferred density: compact (tight spacing, dense info) or comfortable (generous whitespace)?
+7. Which page types will this project have? (checklist: list pages, detail pages, form pages, dashboard)
 
-## Group 3: Design System
-8. What's the personality of this app? (corporate/serious, friendly/casual, or minimal/clean)
-9. What color should represent the primary action? (Flux default is indigo — change or keep?)
-10. Preferred density: compact (tight spacing, dense info) or comfortable (generous whitespace)?
-
-## Group 4: Workflow Preferences
-11. Any specific git rules? (Default: NEVER run git commands without explicit permission)
-12. Do you want the mandatory visual verification rule? (Default: yes -- CC must open and see every UI change in the browser before calling it done)
+## Group 3: Workflow Preferences
+8. Any specific git rules? (Default: NEVER run git commands without explicit permission)
+9. Do you want the mandatory visual verification rule? (Default: yes -- CC must open and see every UI change in the browser before calling it done)
 
 ---
 
@@ -37,27 +32,48 @@ You are helping set up Claude Code for a new Laravel project. Boost has already 
 
 [One sentence description]
 
-### Users & Locale
+### Context
 - **Primary users**: [description]
-- **Language**: [language]
-- **Currency**: [format]
-
-### Subdomains
-- [list if applicable]
-
-### Queue Structure
-[If Horizon, list queues. If not, skip this section]
-
-### External Integrations
-[List APIs/services if any, with pointers to cached docs in .ai/docs/]
+- **Locale**: [language — region, plus currency format if applicable]
 
 ### Design System
-- **Personality**: [corporate/friendly/minimal]
-- **Primary action color**: [color]
-- **Density**: [compact/comfortable]
-- **Color semantics**: primary = [action], success/active = [color], warning/pending = [color], danger/error = red, neutral = zinc
-- **Spacing rhythm**: sections gap-[N], groups gap-[N], items gap-[N], card padding p-[N]
-- **Foundational components to create**: page-header, section-group, stat-card, status-badge, empty-state, price-display (if currency app), info-row
+
+See `guidelines/frontend/design-system.md` for component contracts and archetype details.
+
+**Personality**: [corporate/friendly/minimal]
+
+**Token Semantics**:
+| Token | Color | Intent |
+|-------|-------|--------|
+| Primary action | [color] | Buttons, active states, links, focus rings |
+| Success / active | [color] | Confirmations, active statuses, positive indicators |
+| Warning / pending | [color] | Alerts, pending statuses, attention-needed states |
+| Danger / error | red | Destructive actions, error states, validation failures |
+| Neutral | zinc | Borders, muted text, secondary surfaces, disabled states |
+| Accent (optional) | [color or "none"] | Highlights, decorative elements, brand differentiation |
+
+**Spacing Rhythm** ([compact/comfortable]):
+| Level | Value |
+|-------|-------|
+| Page sections | gap-[N] |
+| Groups | gap-[N] |
+| Items | gap-[N] |
+| Card internals | p-[N] |
+
+**Foundational Components** (based on page types from Q7):
+| Component | Purpose |
+|-----------|---------|
+| page-header | Page title, subtitle, action buttons |
+| section-group | Groups related content with heading |
+| empty-state | Placeholder for empty collections |
+| status-badge | Semantic status with color mapping |
+| [Include if detail pages] info-row | Label-value pairs for detail pages |
+| [Include if dashboard] stat-card | Single metric display for dashboards |
+
+Create each component when you first need it. Add project-specific components as they emerge.
+
+**Page Archetypes in Use**:
+- [List from Q7, e.g.: list pages, detail pages, form pages, dashboard]
 
 ### API Verification (IMPORTANT)
 Always use `search-docs` to verify Livewire and Flux component APIs before implementing. Never assume props, methods, or component names -- check the installed version.

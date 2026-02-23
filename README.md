@@ -26,6 +26,7 @@ Files in `.ai/guidelines/` are loaded by Boost into CC's context every session.
 |------|-----------------|
 | `guidelines/architecture/conventions.md` | Architecture layers, Eloquent principles, return types, Form Requests, testing philosophy |
 | `guidelines/frontend/conventions.md` | Flux-first hierarchy, component extraction, Livewire conventions, wire:model, page structure |
+| `guidelines/frontend/design-system.md` | Design tokens, foundational components, page archetypes, designer boundary |
 | `guidelines/quality/anti-patterns.md` | Explicit prohibitions for frontend, UX, architecture, and testing |
 
 ### Rules (Always On)
@@ -79,6 +80,7 @@ claude-flow/
 ├── guidelines/
 │   ├── architecture/conventions.md   ← Architecture, Eloquent, testing philosophy
 │   ├── frontend/conventions.md       ← Flux-first, Livewire, component patterns
+│   ├── frontend/design-system.md     ← Design tokens, components, archetypes
 │   └── quality/anti-patterns.md      ← Explicit prohibitions
 ├── settings.json                     ← Permissions allowlist (copy to .claude/)
 ├── settings.local.json               ← Hooks config (copy to .claude/)
@@ -103,13 +105,11 @@ claude mcp add -s user context7 npx -y @upstash/context7-mcp@latest
 ### Per Project
 
 ```bash
-# 1. Create project (choose Livewire starter, Pest, your DB)
+# 1. Create project — the installer walks you through everything
+#    Pick: Livewire starter, Pest, your DB, and say yes to Boost
 laravel new project-name && cd project-name
 
-# 2. Install Boost (generates CLAUDE.md, guidelines, MCP servers)
-composer require laravel/boost --dev && php artisan boost:install
-
-# 3. Copy this repo into the project
+# 2. Copy this repo into the project
 cp -r ~/Code/claude-flow/agents/ .claude/agents/
 cp -r ~/Code/claude-flow/skills/ .claude/skills/
 cp -r ~/Code/claude-flow/.claude/rules/ .claude/rules/
@@ -117,7 +117,7 @@ cp -r ~/Code/claude-flow/guidelines/ .ai/guidelines/
 cp ~/Code/claude-flow/settings.json .claude/settings.json
 cp ~/Code/claude-flow/settings.local.json .claude/settings.local.json
 
-# 4. Open Claude Code and configure project
+# 3. Open Claude Code and configure project
 claude
 > /setup-project
 ```
@@ -141,7 +141,7 @@ boost:install
 └── Herd MCP
 
 THIS REPO
-├── .ai/guidelines/ → always loaded (architecture, frontend, quality)
+├── .ai/guidelines/ → always loaded (architecture, frontend, design system, quality)
 ├── .claude/rules/ → always loaded (playwright, compaction, workflow)
 ├── .claude/skills/ → user types /skill-name
 ├── .claude/agents/ → called by skills (with tool restrictions + memory)
