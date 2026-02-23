@@ -5,87 +5,55 @@ Goes **on top of** what Laravel Boost already generates.
 
 ---
 
-## How Everything Activates
+## Features
 
-Claude Code has 3 types of configuration in this repo, and they activate differently.
-
-### Guidelines → Always On (Automatic)
-
-Files in `.ai/guidelines/` are loaded by Boost into CC's context every session. You never invoke them — they're just *there*.
-
-| File | What it enforces |
-|------|-----------------|
-| `guidelines/flux-ui/components.md` | Flux-first hierarchy, component extraction, no raw HTML, no Alpine abuse |
-| `guidelines/flux-ui/anti-patterns.md` | 11 explicit things CC must NEVER do |
-| `guidelines/laravel/conventions.md` | Architecture layers, Eloquent, return types, Form Requests, testing |
-| `guidelines/livewire/conventions.md` | Single-file components, state, wire:model, computed properties, performance |
-
-**Reliability: High.** Boost loads these automatically. CC sees them every session.
-
-### Skills → You Type Them (Explicit) or Auto-Invoke (Unreliable)
-
-You type `/skill-name` in Claude Code. Skills can also auto-invoke based on their description, but **auto-invocation is inconsistent** — treat it as a bonus, not a guarantee.
-
-| Skill | When you use it | What it does |
-|-------|----------------|--------------|
-| `/setup-project` | Once, at project start | Asks questions, appends project-specific rules to CLAUDE.md |
-| `/code-review` | After completing a feature | Calls the `code-reviewer` agent, then runs `pint --dirty` |
-| `/ux-review` | After building/changing any UI | Calls the `ux-reviewer` agent to evaluate workflow, hierarchy, patterns |
-| `/design-system` | Once, before building any UI | Defines colors, spacing, creates foundational Blade components |
-| `/test-app` | When you want regression tests | CC writes Pest 4 browser tests for the specified flow |
-| `/verify-ui` | During UI development | CC opens browser, screenshots, evaluates, iterates |
-| `/fetch-docs` | When integrating external APIs | CC reads official docs instead of Googling |
-| `/ui-patterns` | Before building any new page | Reference patterns for lists, forms, dashboards, detail pages |
-
-**Reliability: High when typed. Medium for auto-invocation.**
-
-**The verify-ui problem:** CC must see what it builds. We can't rely on auto-invocation. That's why `/setup-project` appends this hard rule to CLAUDE.md:
-
-```
-### Visual Verification (MANDATORY)
-After implementing or modifying ANY user-facing code, you MUST:
-1. Open the page in the browser using Playwright CLI
-2. Take a screenshot and evaluate the result
-3. Fix any issues found
-4. Verify again until the implementation is solid
-```
-
-### Agents → Called By Skills (Reliable)
-
-Agents are specialized CC instances with their own context window. Called by skills.
-
-| Agent | Triggered by | What it does |
-|-------|-------------|-------------|
-| `code-reviewer` | `/code-review` | Reviews code for Laravel craftsmanship and simplicity |
-| `ux-reviewer` | `/ux-review` | Evaluates UX: workflow logic, hierarchy, consistency |
+- **Guidelines** (always loaded): Architecture conventions, frontend patterns, anti-patterns -- opinions only, no API specifics that go stale
+- **Skills** (user-invoked): Code review, UX review, visual verification, test writing, project setup
+- **Agents** (called by skills): Specialized subagents with tool restrictions and persistent project memory
+- **Permissions allowlist**: Pre-approved commands (artisan, pint, pest, npm, composer, git read-only, playwright) to reduce prompt friction
+- **Persistent Playwright reference**: `.claude/rules/playwright.md` solves the "re-learns CLI every session" problem
+- **Compaction strategy**: `.claude/rules/compaction.md` tells CC what to preserve and what to drop during context compaction
 
 ---
 
-## The Development Workflow
+## How Everything Activates
 
-```
-1. START SESSION
-   └── CC automatically loads: CLAUDE.md + Boost guidelines + all guidelines/
+### Guidelines (Always On)
 
-2. PLAN THE UI
-   └── You type: /ux-review (or /ui-patterns to review available patterns)
-       └── ux-reviewer agent plans the approach before any code is written
+Files in `.ai/guidelines/` are loaded by Boost into CC's context every session.
 
-3. BUILD
-   └── CC writes code following guidelines (auto-loaded)
-   └── After each visual change, CC must verify (CLAUDE.md rule):
-       └── Uses verify-ui skill → opens browser, screenshots, evaluates, iterates
+| File | What it enforces |
+|------|-----------------|
+| `guidelines/architecture/conventions.md` | Architecture layers, Eloquent principles, return types, Form Requests, testing philosophy |
+| `guidelines/frontend/conventions.md` | Flux-first hierarchy, component extraction, Livewire conventions, wire:model, page structure |
+| `guidelines/quality/anti-patterns.md` | Explicit prohibitions for frontend, UX, architecture, and testing |
 
-4. TEST
-   └── You type: /test-app
-       └── CC writes Pest 4 regression tests for the flow
+### Rules (Always On)
 
-5. REVIEW
-   └── You type: /code-review
-       └── code-reviewer agent analyzes code, then pint formats it
-   └── You type: /ux-review
-       └── ux-reviewer agent evaluates the final UX quality
-```
+Files in `.claude/rules/` are loaded by Claude Code every session.
+
+| File | What it provides |
+|------|-----------------|
+| `.claude/rules/playwright.md` | Persistent Playwright CLI command reference |
+| `.claude/rules/compaction.md` | What to preserve/drop during context compaction |
+| `.claude/rules/workflow.md` | Session workflow rules (verify APIs, check browser, read CLAUDE.md) |
+
+### Skills (User-Invoked)
+
+| Skill | When to use | What it does |
+|-------|-------------|--------------|
+| `/setup-project` | Once, at project start | Asks questions, appends project-specific rules to CLAUDE.md |
+| `/code-review` | After completing a feature | Calls code-reviewer agent + runs pint |
+| `/ux-review` | After building/changing UI | Calls ux-reviewer agent to evaluate workflow, hierarchy, patterns |
+| `/test-app` | When you want regression tests | Writes Pest feature tests + Livewire::test() |
+| `/verify-ui` | During UI development | Opens browser, screenshots, evaluates, iterates |
+
+### Agents (Called by Skills)
+
+| Agent | Called by | Tools | Memory |
+|-------|-----------|-------|--------|
+| `code-reviewer` | `/code-review` | Read, Grep, Glob, Bash (read-only) | project |
+| `ux-reviewer` | `/ux-review` | Read, Grep, Glob, Bash (read-only) | project |
 
 ---
 
@@ -93,28 +61,28 @@ Agents are specialized CC instances with their own context window. Called by ski
 
 ```
 claude-flow/
-├── README.md                               ← This file
-├── settings.local.json                     ← Hooks config (copy to .claude/ per project)
+├── .claude/
+│   ├── rules/
+│   │   ├── playwright.md              ← Persistent Playwright CLI reference
+│   │   ├── compaction.md              ← Context compaction strategy
+│   │   └── workflow.md                ← Session workflow rules
+│   └── settings.local.json           ← Repo-specific permissions (unchanged)
 ├── agents/
-│   ├── code-reviewer.md                    ← Subagent for code quality review
-│   └── ux-reviewer.md                      ← Subagent for UX/workflow review
+│   ├── code-reviewer.md              ← Subagent for code quality review
+│   └── ux-reviewer.md                ← Subagent for UX/workflow review
 ├── skills/
-│   ├── setup-project/SKILL.md              ← /setup-project (one-time project config)
-│   ├── code-review/SKILL.md                ← /code-review (calls agent + pint)
-│   ├── ux-review/SKILL.md                  ← /ux-review (calls agent, opens browser)
-│   ├── verify-ui/SKILL.md                  ← /verify-ui (MANDATORY build-verify loop)
-│   ├── test-app/SKILL.md                   ← /test-app (Pest 4 regression tests)
-│   ├── ui-patterns/SKILL.md                ← /ui-patterns (pattern library reference)
-│   ├── design-system/SKILL.md              ← /design-system (establish visual language)
-│   └── fetch-docs/SKILL.md                 ← /fetch-docs (cache external API docs)
-└── guidelines/
-    ├── flux-ui/
-    │   ├── components.md                   ← Always loaded: Flux-first rules (~30 lines)
-    │   └── anti-patterns.md                ← Always loaded: 11 explicit prohibitions
-    ├── laravel/
-    │   └── conventions.md                  ← Always loaded: architecture, Eloquent, testing
-    └── livewire/
-        └── conventions.md                  ← Always loaded: state, wire:model, performance
+│   ├── setup-project/SKILL.md        ← /setup-project (one-time project config)
+│   ├── code-review/SKILL.md          ← /code-review (calls agent + pint)
+│   ├── ux-review/SKILL.md            ← /ux-review (calls agent, opens browser)
+│   ├── verify-ui/SKILL.md            ← /verify-ui (build-verify loop)
+│   └── test-app/SKILL.md             ← /test-app (Pest feature tests)
+├── guidelines/
+│   ├── architecture/conventions.md   ← Architecture, Eloquent, testing philosophy
+│   ├── frontend/conventions.md       ← Flux-first, Livewire, component patterns
+│   └── quality/anti-patterns.md      ← Explicit prohibitions
+├── settings.json                     ← Permissions allowlist (copy to .claude/)
+├── settings.local.json               ← Hooks config (copy to .claude/)
+└── README.md
 ```
 
 ---
@@ -128,7 +96,7 @@ claude-flow/
 npm install -g @playwright/cli@latest
 playwright-cli install-browser
 
-# Context7 MCP (global, for non-Laravel package docs only — Boost handles Laravel docs)
+# Context7 MCP (global, for non-Laravel package docs -- Boost handles Laravel docs)
 claude mcp add -s user context7 npx -y @upstash/context7-mcp@latest
 ```
 
@@ -144,28 +112,19 @@ composer require laravel/boost --dev && php artisan boost:install
 # 3. Copy this repo into the project
 cp -r ~/Code/claude-flow/agents/ .claude/agents/
 cp -r ~/Code/claude-flow/skills/ .claude/skills/
+cp -r ~/Code/claude-flow/.claude/rules/ .claude/rules/
 cp -r ~/Code/claude-flow/guidelines/ .ai/guidelines/
-
-# 4. Copy hooks config (auto-formats PHP with Pint after every edit)
+cp ~/Code/claude-flow/settings.json .claude/settings.json
 cp ~/Code/claude-flow/settings.local.json .claude/settings.local.json
 
-# 5. Open Claude Code
+# 4. Open Claude Code and configure project
 claude
-
-# 6. Configure project specifics (appends rules to CLAUDE.md including verify-ui mandate)
 > /setup-project
-
-# 7. Establish design system before any UI work
-> /design-system
 ```
 
 ### What Boost Already Handles (Don't Duplicate)
 
-`laravel new` + `boost:install` gives you: CLAUDE.md with foundational rules, AI guidelines for all detected packages (version-specific), Boost MCP (15+ tools), Herd MCP. This repo only adds what Boost doesn't generate.
-
-### Per-Project Customization
-
-All project-specific context lives in CLAUDE.md (generated by `/setup-project`). Agents and skills read from CLAUDE.md — no manual editing of agent files needed.
+`laravel new` + `boost:install` gives you: CLAUDE.md with foundational rules, AI guidelines for all detected packages (version-specific), Boost MCP (15+ tools including `search-docs`), Herd MCP. This repo only adds what Boost doesn't generate.
 
 ---
 
@@ -176,28 +135,32 @@ laravel new
 └── Livewire + Flux UI + Fortify + Tailwind + Pest
 
 boost:install
-├── CLAUDE.md (foundational rules — always loaded)
-├── .ai/guidelines/ (ecosystem guidelines — always loaded)
-├── Boost MCP (15+ tools)
+├── CLAUDE.md (foundational rules -- always loaded)
+├── .ai/guidelines/ (ecosystem guidelines -- always loaded)
+├── Boost MCP (15+ tools including search-docs)
 └── Herd MCP
 
 THIS REPO
-├── .ai/guidelines/ → always loaded (Flux UI, Laravel, Livewire conventions)
-├── .claude/skills/ → you type /skill-name
-├── .claude/agents/ → called by skills
+├── .ai/guidelines/ → always loaded (architecture, frontend, quality)
+├── .claude/rules/ → always loaded (playwright, compaction, workflow)
+├── .claude/skills/ → user types /skill-name
+├── .claude/agents/ → called by skills (with tool restrictions + memory)
+├── .claude/settings.json → permissions allowlist
 └── .claude/settings.local.json → hooks (auto-format with Pint)
 
 /setup-project appends to CLAUDE.md
-└── verify-ui mandate (always loaded, enforced every session)
-└── git safety rules
+├── verify-ui mandate (always loaded, enforced every session)
+├── git safety rules
+├── design system decisions
+├── compaction preservation instructions
 └── project-specific context (domain, users, locale, currency)
 ```
 
 ## Hooks
 
-The `settings.local.json` file configures a PostToolUse hook that auto-runs `vendor/bin/pint` on any PHP file CC writes or edits. Copy it to `.claude/settings.local.json` in each project. It's gitignored by default (`.claude/settings.local.json` is not committed).
+The `settings.local.json` file configures a PostToolUse hook that auto-runs `vendor/bin/pint` on any PHP file CC writes or edits. Copy it to `.claude/settings.local.json` in each project. It's gitignored by default.
 
 ## Maintenance
 
-**Shared files**: Edit here → push to GitHub → `cp` into active projects.
-**Per project**: New patterns → update ui-patterns skill here. Boost updates via `php artisan boost:update`.
+**Shared files**: Edit here, push to GitHub, `cp` into active projects.
+**Per project**: Boost updates via `php artisan boost:update`. Guidelines and rules here are opinions-only — API specifics come from Boost's `search-docs`.

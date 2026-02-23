@@ -1,6 +1,8 @@
 ---
 name: code-review
-description: Run two-step code review (craftsmanship + formatting). Use after completing a feature, refactoring, or before a PR.
+description: "Review recent code changes for Laravel craftsmanship, simplicity, and convention adherence, then auto-format with Pint. Use when the user says 'review this code', 'code review', 'check my code', 'review before PR', or 'is this clean'. NOT for UX or visual review -- use /ux-review for that."
+context: fork
+allowed-tools: Bash(vendor/bin/pint *), Bash(git diff*), Bash(git log*), Bash(git status*)
 ---
 
 Review code changes using the code-reviewer agent.

@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(vendor/bin/pint *)",
+      "Bash(vendor/bin/pest *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(composer *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git stash list*)",
+      "Bash(gh *)",
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(playwright-cli *)",
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(curl *)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git checkout*)",
+      "Bash(git reset*)",
+      "Bash(git clean*)",
+      "Bash(git rebase*)",
+      "Bash(rm -rf*)"
+    ]
+  }
+}

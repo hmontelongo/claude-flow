@@ -1,0 +1,63 @@
+# Frontend Conventions
+
+## The Hierarchy (Always)
+
+1. Flux component with built-in props — always run `search-docs` to verify the API before using it
+2. Blade component wrapping Flux — for reusable composed patterns
+3. Livewire + minimal Tailwind — only when Flux has no component
+4. Alpine.js — LAST resort, only for client-side micro-interactions Livewire can't handle
+5. Never vanilla JavaScript
+
+## Component Extraction
+
+If a Flux composition appears 2+ times, extract it to `resources/views/components/`. Cards, badges, field groups, status indicators — extract early.
+
+## Clean Views
+
+No `@php` blocks in Blade. Data queries and formatting belong in Livewire computed properties or model accessors. Views describe WHAT to show, not HOW to compute it.
+
+## Livewire Conventions
+
+**Single-file components are the default.** Colocation of PHP + Blade in one file.
+
+**Keep state minimal.** Livewire serializes all public properties every request. Pass primitives (IDs), not Eloquent models. Resolve models in `#[Computed]` properties.
+
+**`#[Computed]` for all derived data.** Cached within request lifecycle. Use for database queries and calculations. Never assign query results to public properties.
+
+## wire:model Defaults
+
+- `wire:model` (deferred) — most form fields
+- `wire:model.live` — ONLY for search/filter needing instant feedback, always with `.debounce.300ms`
+- `wire:model.blur` — validation feedback on focus loss
+
+Default to deferred. `.live` on every field is a performance anti-pattern.
+
+## Forms
+
+- **Form objects** for 5+ field forms — colocates validation rules with form data
+- **`#[Validate]` attributes** for simpler forms
+- **`wire:key`** on every `@foreach` loop — prevents DOM diffing bugs
+
+## Performance
+
+- **`#[Lazy]`** for below-fold and tabbed components — defer rendering until visible
+- **`$this->skipRender()`** when a method doesn't need to re-render the view
+
+## Acceptable Tailwind on Flux Components
+
+- Layout: flex, grid, gap, items-center, justify-between
+- Spacing: margin, padding
+- Responsive display: hidden, sm:block
+- Sizing: max-w-*, w-full
+
+**Never on Flux components**: colors, typography, borders, border-radius, hover/focus states — use the component's built-in props instead.
+
+## Page Structure Pattern
+
+Every page follows: header (title + primary action) -> filters/search -> content area -> pagination.
+
+One primary action per context. Secondary actions use ghost/subtle variants. Primary action is rightmost.
+
+## Design Language First
+
+Before building any UI, establish the project's design system: color semantics (map Flux color variants to meaning), spacing rhythm (consistent gaps between sections, groups, items), and a list of foundational Blade components to create. All pages follow established patterns — no ad-hoc styling.

@@ -1,7 +1,8 @@
 ---
 name: ux-review
-description: Run UX review on a page or flow using the ux-reviewer agent. Use after implementing or modifying any user-facing interface.
+description: "Review a page or user flow for UX quality -- workflow logic, visual hierarchy, consistency, and user-friendliness. Use when the user says 'review the UX', 'how does this look', 'check the UI', 'is this page good', or 'review this flow'. Takes screenshots and evaluates the live page. NOT for code quality -- use /code-review for that."
 argument-hint: "[page or route to review]"
+context: fork
 ---
 
 Review the UX of a recently built or modified interface using the ux-reviewer agent.
@@ -13,7 +14,7 @@ If not, look at recently modified view files (`.blade.php` in `resources/views/`
 
 ## Process
 
-1. Open the page in the browser to see the current state (use the verify-ui skill)
+1. Open the page in the browser to see the current state (use Playwright CLI)
 2. Pass the screenshot and the relevant view/component code to the ux-reviewer agent
 3. The ux-reviewer evaluates: workflow logic, hierarchy, progressive disclosure, empty states, mobile considerations
 4. Report findings back with specific, actionable suggestions
