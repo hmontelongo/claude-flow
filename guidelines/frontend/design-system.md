@@ -125,27 +125,6 @@ KPI row (stat-cards) → primary content (main chart or list) → secondary cont
 
 KPIs are the first thing users see. Limit to 3-5 stats. Primary content gets the most space.
 
----
 
-## Designer Boundary
 
-Convention for separating design work from application logic.
-
-### Designers Work In
-
-- `resources/views/components/` — Blade components with props/slots, composing framework primitives
-- `tailwind.config.js` — theme extensions (colors, spacing, fonts)
-- Blade views — layout, structure, and visual refinement of existing pages
-
-### Designers Do NOT Touch
-
-- Livewire component logic (PHP classes, computed properties, actions)
-- `wire:*` directives — these are application behavior, not design
-- Routes, controllers, middleware — backend concerns
-- PHP beyond Blade template syntax
-
-### Workflow
-
-1. Developer builds functional screens using vanilla framework components — correct data, correct behavior, rough layout
-2. Designer refines the component layer — extracts patterns, polishes spacing, establishes visual consistency
-3. Developer integrates any new components back into Livewire views
+Designer boundary conventions have moved to `guidelines/frontend/conventions.md`.
